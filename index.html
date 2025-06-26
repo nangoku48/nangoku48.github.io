@@ -1,31 +1,668 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>AI News Daily</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* ここに .news-card や .highlight の CSS を貼る */
-    body { font-family: 'Noto Sans JP', sans-serif; background-color: #f0f4f8; }
-    .news-card { transition: box-shadow 0.3s ease; overflow: hidden; cursor: pointer; }
-    .news-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
-    .news-card.active { box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    .news-card.active .news-content { max-height: 1000px; }
-    .arrow { transition: transform 0.3s ease; }
-    .news-card.active .arrow { transform: rotate(180deg); }
-    .highlight { background: linear-gradient(transparent 60%, #ffd166 60%); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本日のAIニュース</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 390px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            min-height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            text-align: center;
+            padding: 25px 15px 20px 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="15" fill="%2310b981" opacity="0.6"/><circle cx="80" cy="30" r="10" fill="%2306d6a0" opacity="0.4"/><circle cx="60" cy="70" r="20" fill="%2310b981" opacity="0.3"/><rect x="10" y="60" width="25" height="25" rx="8" fill="%2306d6a0" opacity="0.5"/><rect x="70" y="10" width="15" height="15" rx="4" fill="%2310b981" opacity="0.4"/></svg>') repeat;
+            animation: float 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .header h1 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: white;
+            color: #1d4ed8;
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: 3px solid #10b981;
+            box-shadow: 0 8px 25px rgba(16,185,129,0.3);
+            display: inline-block;
+            font-weight: 900;
+            position: relative;
+            z-index: 2;
+        }
+
+        .creator-text {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 15px;
+            font-style: italic;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: 2px solid white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16,185,129,0.4);
+            animation: pulse 2s infinite;
+            position: relative;
+            z-index: 2;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 15px rgba(16,185,129,0.4);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 6px 20px rgba(16,185,129,0.6);
+                transform: scale(1.02);
+            }
+            100% {
+                box-shadow: 0 4px 15px rgba(16,185,129,0.4);
+                transform: scale(1);
+            }
+        }
+
+        .header-subtitle:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16,185,129,0.5);
+            animation: none;
+        }
+
+        .arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .arrow.rotated {
+            transform: rotate(180deg);
+        }
+
+        .header-detail {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: left;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .news-item {
+            margin: 15px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(59,130,246,0.15);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .news-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="85" cy="15" r="8" fill="%2310b981" opacity="0.1"/><circle cx="15" cy="85" r="12" fill="%2306d6a0" opacity="0.1"/><rect x="75" y="75" width="20" height="20" rx="6" fill="%2310b981" opacity="0.08"/></svg>') no-repeat;
+            pointer-events: none;
+        }
+
+        .news-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 35px rgba(59,130,246,0.2);
+        }
+
+        .news-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            padding: 20px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .news-header:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        }
+
+        .news-subtitle {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 5px;
+            font-style: italic;
+            color: #dbeafe;
+        }
+
+        .news-number {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 3px 10px rgba(16,185,129,0.4);
+        }
+
+        .news-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            padding-right: 40px;
+        }
+
+        .news-summary {
+            font-size: 13px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .expand-icon {
+            transition: transform 0.3s ease;
+            font-size: 12px;
+        }
+
+        .expand-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .news-content {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .news-content.expanded {
+            max-height: 1000px;
+            padding: 20px;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            background-color: #1d4ed8;
+            width: 2px;
+            height: 1.2em;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .typing-text {
+            display: inline;
+        }
+
+        .news-content h3 {
+            color: #1d4ed8;
+            font-size: 15px;
+            margin: 15px 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .news-content h3:first-child {
+            margin-top: 0;
+        }
+
+        .news-content p, .news-content li {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+
+        .news-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .highlight {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+
+        .tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            margin: 5px 5px 5px 0;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+        }
+
+        .summary-section {
+            margin: 15px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 20px;
+            padding: 20px;
+            border-left: 4px solid #10b981;
+            box-shadow: 0 4px 15px rgba(16,185,129,0.1);
+        }
+
+        .summary-section h3 {
+            color: #1d4ed8;
+            font-size: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .summary-list {
+            list-style: none;
+        }
+
+        .summary-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(16,185,129,0.2);
+            font-size: 14px;
+            color: #475569;
+        }
+
+        .summary-list li:last-child {
+            border-bottom: none;
+        }
+
+        .cta {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 20px 15px;
+            border-radius: 25px;
+            box-shadow: 0 6px 20px rgba(16,185,129,0.4);
+        }
+    </style>
 </head>
-<body class="p-4">
-  <!-- ここにあなたの <div class="…">… の HTML 本体を全部貼る -->
-  <!-- 省略 -->
-  <script>
-    document.addEventListener('DOMContentLoaded', ()=>{
-      document.querySelectorAll('.news-card').forEach(card=>{
-        card.addEventListener('click',()=>card.classList.toggle('active'));
-      });
-    });
-  </script>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 本日のAIニュース（2025年6月26日）</h1>
+            <div class="creator-text">製作者 Nangoku</div>
+            <div class="header-subtitle" onclick="toggleHeaderDetail()">
+                <span>👇 をクリック</span>
+                <span class="arrow" id="headerArrow">▼</span>
+            </div>
+            <div class="header-detail" id="headerDetail">
+                <strong>🎯 このニュースサイトの使い方</strong><br>
+                • 各ニュース項目をタップすると詳細が展開されます<br>
+                • 最新のAI技術動向を分かりやすく解説<br>
+                • ビジネスや日常生活への影響も紹介<br><br>
+                <strong>✨ 今日のハイライト</strong><br>
+                AIがついに「考える」段階に到達。これまでとは次元が違う進化が始まっています。
+            </div>
+        </div>
+
+        <div class="news-item">
+            <div class="news-header" onclick="toggleContent('news1')">
+                <div class="news-number">1</div>
+                <div class="news-subtitle">今日のハイライト</div>
+                <div class="news-title">🚀 OpenAI「o1」発表</div>
+                <div class="news-summary">
+                    <span>論理的思考が大幅強化</span>
+                    <span class="expand-icon" id="icon1">▼</span>
+                </div>
+            </div>
+            <div class="news-content" id="news1">
+                <h3>🎯 何が起きた？</h3>
+                <p>OpenAIが最新AIモデル「o1」を公開。従来のAIが苦手としていた「論理的に考える力」を大幅に強化したと話題に。</p>
+                
+                <h3>⭐ ポイント</h3>
+                <ul>
+                    <li>複雑な問題をステップごとに解決できる</li>
+                    <li>これまでの「答えは出せるけど理由が曖昧」という課題をクリア</li>
+                </ul>
+                
+                <h3>🏆 「ノーベル賞級」とは？</h3>
+                <p>孫正義氏が「人工知能の思考領域到達は歴史的瞬間」「ノーベル賞級の進化」と評したほど、その性能と将来性が高く評価されています。</p>
+                
+                <div style="margin-top: 15px;">
+                    <span class="tag">論理思考</span>
+                    <span class="tag">OpenAI</span>
+                    <span class="tag">画期的</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="news-item">
+            <div class="news-header" onclick="toggleContent('news2')">
+                <div class="news-number">2</div>
+                <div class="news-subtitle">最も注目すべき革新技術</div>
+                <div class="news-title">🎨 マルチモーダル生成AI</div>
+                <div class="news-summary">
+                    <span>文字・画像・音声を自在に変換</span>
+                    <span class="expand-icon" id="icon2">▼</span>
+                </div>
+            </div>
+            <div class="news-content" id="news2">
+                <h3>🤔 マルチモーダルAIって何？</h3>
+                <p>テキスト・画像・音声・動画など、異なるメディアをまとめて理解・生成できるAI技術のこと。</p>
+                
+                <h3>🔥 なぜ注目？</h3>
+                <p>パナソニックが発表した「OmniFlow」は、</p>
+                <ul>
+                    <li>文章を入力すると、そこから関係する画像や音声を即座に作れる</li>
+                    <li>逆に写真や音声からストーリー仕立ての文章を生成できる</li>
+                </ul>
+                
+                <h3>🌟 どう変わる？</h3>
+                <p><strong class="highlight">1. クリエイティブ業界</strong><br>
+                ひとつのツールで「映像＋BGM付き動画」を自動制作。制作コスト・時間を大幅削減。</p>
+                
+                <p><strong class="highlight">2. ビジネス現場</strong><br>
+                会議録を要約し、関連資料や図表を自動生成。会議の準備・振り返りがラクに。</p>
+                
+                <p><strong class="highlight">3. 日常生活</strong><br>
+                スマホで撮った写真や声メモから、旅行日記や子どもアルバムをワンクリックで作成。</p>
+                
+                <div style="margin-top: 15px;">
+                    <span class="tag">マルチモーダル</span>
+                    <span class="tag">OmniFlow</span>
+                    <span class="tag">革新的</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="news-item">
+            <div class="news-header" onclick="toggleContent('news3')">
+                <div class="news-number">3</div>
+                <div class="news-title">🤝 AIが「能動的パートナー」へ</div>
+                <div class="news-summary">
+                    <span>ツールから相棒に進化</span>
+                    <span class="expand-icon" id="icon3">▼</span>
+                </div>
+            </div>
+            <div class="news-content" id="news3">
+                <p>従来は「人がやることを手伝うツール」だったAIが、情報を横断的に扱い、自ら提案・創作までしてくれる「相棒」になります。</p>
+                
+                <h3>🔮 今後の展望</h3>
+                <ul>
+                    <li>2025年後半以降、多くの企業がマルチモーダルAIをサービス化予定</li>
+                    <li>個人でも手軽に"動画＋文字＋音声"を組み合わせたコンテンツ制作が可能に</li>
+                    <li>教育・医療・エンタメなど、あらゆる分野でAI活用の幅が一気に広がる見込み</li>
+                </ul>
+                
+                <div style="margin-top: 15px;">
+                    <span class="tag">パートナーAI</span>
+                    <span class="tag">未来予測</span>
+                    <span class="tag">全業界</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <h3>📋 まとめ</h3>
+            <ul class="summary-list">
+                <li><strong>OpenAI「o1」</strong> → 論理的思考が強化された次世代AIモデル</li>
+                <li><strong>マルチモーダルAI「OmniFlow」</strong> → 文章・画像・音声・動画を自在に相互変換</li>
+                <li>AIはますます「考え」「創る」パートナーとして、わたしたちの仕事や生活を支援</li>
+            </ul>
+        </div>
+
+        <div class="cta">
+            🎯 最新動向をキャッチして、ぜひ今から活用を検討してみてください！
+        </div>
+    </div>
+
+    <script>
+        function toggleHeaderDetail() {
+            const detail = document.getElementById('headerDetail');
+            const arrow = document.getElementById('headerArrow');
+            
+            if (detail.style.display === 'none' || detail.style.display === '') {
+                detail.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                detail.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
+        }
+
+        let currentTypingAnimation = null;
+
+        function toggleContent(contentId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById('icon' + contentId.slice(-1));
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                icon.classList.remove('rotated');
+                
+                // 進行中のタイピングアニメーションをクリア
+                if (currentTypingAnimation) {
+                    clearTimeout(currentTypingAnimation);
+                    currentTypingAnimation = null;
+                }
+            } else {
+                // 他のコンテンツを閉じる
+                const allContents = document.querySelectorAll('.news-content');
+                const allIcons = document.querySelectorAll('.expand-icon');
+                
+                allContents.forEach(c => c.classList.remove('expanded'));
+                allIcons.forEach(i => i.classList.remove('rotated'));
+                
+                // 進行中のタイピングアニメーションをクリア
+                if (currentTypingAnimation) {
+                    clearTimeout(currentTypingAnimation);
+                    currentTypingAnimation = null;
+                }
+                
+                // 選択されたコンテンツを開く
+                content.classList.add('expanded');
+                icon.classList.add('rotated');
+                
+                // タイピングエフェクトを開始
+                setTimeout(() => {
+                    startTypingEffect(content);
+                    content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
+        }
+
+        function startTypingEffect(container) {
+            // 元のHTMLコンテンツを保存
+            const originalContent = container.innerHTML;
+            
+            // コンテンツをクリア
+            container.innerHTML = '';
+            
+            // HTMLタグとテキストを分離
+            const elements = parseHTML(originalContent);
+            
+            let elementIndex = 0;
+            let charIndex = 0;
+            let currentElement = null;
+            
+            function typeNextChar() {
+                if (elementIndex >= elements.length) {
+                    // タイピング完了
+                    return;
+                }
+                
+                const element = elements[elementIndex];
+                
+                if (element.isTag) {
+                    // HTMLタグの場合、そのまま追加
+                    if (element.isClosing) {
+                        // 閉じタグの場合
+                        container.appendChild(document.createRange().createContextualFragment(element.content));
+                        currentElement = null;
+                    } else {
+                        // 開始タグまたは自己完結タグの場合
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = element.content;
+                        const newElement = tempDiv.firstChild;
+                        
+                        if (newElement) {
+                            container.appendChild(newElement);
+                            currentElement = newElement;
+                        }
+                    }
+                    elementIndex++;
+                    charIndex = 0;
+                } else {
+                    // テキストの場合、一文字ずつ追加
+                    const text = element.content;
+                    
+                    if (charIndex < text.length) {
+                        const char = text[charIndex];
+                        
+                        if (currentElement && currentElement.tagName !== 'BR') {
+                            // 現在の要素にテキストを追加
+                            currentElement.textContent += char;
+                        } else {
+                            // 直接テキストノードを追加
+                            const lastNode = container.lastChild;
+                            if (lastNode && lastNode.nodeType === Node.TEXT_NODE) {
+                                lastNode.textContent += char;
+                            } else {
+                                container.appendChild(document.createTextNode(char));
+                            }
+                        }
+                        
+                        charIndex++;
+                    } else {
+                        // 現在の要素のテキストが完了
+                        elementIndex++;
+                        charIndex = 0;
+                    }
+                }
+                
+                // 次の文字を表示
+                const delay = Math.random() * 30 + 20; // 20-50ms のランダムな間隔
+                currentTypingAnimation = setTimeout(typeNextChar, delay);
+            }
+            
+            // タイピングを開始
+            typeNextChar();
+        }
+
+        function parseHTML(html) {
+            const elements = [];
+            const tagRegex = /<[^>]+>/g;
+            let lastIndex = 0;
+            let match;
+            
+            while ((match = tagRegex.exec(html)) !== null) {
+                // タグ前のテキスト
+                if (match.index > lastIndex) {
+                    const text = html.substring(lastIndex, match.index);
+                    if (text.trim()) {
+                        elements.push({ isTag: false, content: text });
+                    }
+                }
+                
+                // タグ
+                const tag = match[0];
+                const isClosing = tag.startsWith('</');
+                elements.push({ isTag: true, content: tag, isClosing: isClosing });
+                
+                lastIndex = match.index + match[0].length;
+            }
+            
+            // 最後のテキスト
+            if (lastIndex < html.length) {
+                const text = html.substring(lastIndex);
+                if (text.trim()) {
+                    elements.push({ isTag: false, content: text });
+                }
+            }
+            
+            return elements;
+        }
+
+        // 初期状態で最初のヘッダー詳細を非表示に
+        document.getElementById('headerDetail').style.display = 'none';
+    </script>
 </body>
 </html>
