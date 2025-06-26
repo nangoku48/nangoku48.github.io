@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI News Daily</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ここに .news-card や .highlight の CSS を貼る */
+    body { font-family: 'Noto Sans JP', sans-serif; background-color: #f0f4f8; }
+    .news-card { transition: box-shadow 0.3s ease; overflow: hidden; cursor: pointer; }
+    .news-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease; }
+    .news-card.active { box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .news-card.active .news-content { max-height: 1000px; }
+    .arrow { transition: transform 0.3s ease; }
+    .news-card.active .arrow { transform: rotate(180deg); }
+    .highlight { background: linear-gradient(transparent 60%, #ffd166 60%); }
+  </style>
+</head>
+<body class="p-4">
+  <!-- ここにあなたの <div class="…">… の HTML 本体を全部貼る -->
+  <!-- 省略 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', ()=>{
+      document.querySelectorAll('.news-card').forEach(card=>{
+        card.addEventListener('click',()=>card.classList.toggle('active'));
+      });
+    });
+  </script>
+</body>
+</html>
